@@ -11,7 +11,7 @@ load_dotenv()
 tavily = TavilyClient()
 
 
-@tool
+# @tool
 def get_itinerary(destination: str, days: int):
     """
     Get a travel itinerary for a given destination and number of days.

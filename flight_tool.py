@@ -23,11 +23,11 @@ class FlightInfoInput(BaseModel):
         description="Arrival airport IATA code. Example: NRT"
     )
 
-@tool(args_schema=FlightInfoInput)
+# @tool(args_schema=FlightInfoInput)
 def search_flights(
     departure_airport: str,
     arrival_airport: str,
-):
+) -> FlightInfoInput:
     """
     Search live flights between two airports.
 

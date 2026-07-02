@@ -6,10 +6,14 @@ from pydantic import BaseModel, Field
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 load_dotenv()
+import psycopg
+from langgraph.checkpoint.postgres import PostgresSaver
 from tavily import TavilyClient
 from flight_tool import search_flights
 from tavily_tool import get_itinerary
 tavily = TavilyClient()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 print("Hello LangGraph!")
 
@@ -107,14 +111,38 @@ builder.add_edge("flight_options", "itinerary")
 builder.add_edge("itinerary", "final_response")
 builder.add_edge("final_response", END)
 
-graph = builder.compile()
+# graph = builder.compile()
 
-graph.get_graph().draw_mermaid_png(output_file_path="agent_reasoning_flow.png")
+# graph.get_graph().draw_mermaid_png(output_file_path="agent_reasoning_flow.png")
 
-result = graph.invoke(
-    {
-        "userquery": "I am planning a 3 day trip from Delhi to Sydney. Can you help me with the best flight options and itinerary details?"
+# result = graph.invoke(
+#     {
+#         "userquery": "I am planning a 3 day trip from Delhi to Sydney. Can you help me with the best flight options and itinerary details?"
+#     }
+# )
+
+# print(result["final_response"])
+
+
+_conn = psycopg.connect(DATABASE_URL)
+_conn.autocommit = True
+checkpointer = PostgresSaver(_conn)
+checkpointer.setup()
+
+app = builder.compile(checkpointer=checkpointer)
+
+if __name__ == "__main__":
+    config = {
+        "configurable" : {
+            "thread_id" : "thread_faizan"
+        }
     }
-)
 
-print(result["final_response"])
+    result = app.invoke(
+        {
+            "userquery": "I am planning a 3 day trip from Delhi to Bombay. Can you help me in this regard?"
+        },
+        config=config
+    )
+
+    print(result["final_response"])
